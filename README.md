@@ -61,7 +61,9 @@ Importante: Tanto el WavTrigger como el arduino deben tener alimentacion externa
 ## Software
 - Arduino IDE
 - Python 3.7
-**Se requieren las librerias WavTrigger, LiquidCrystal, AltSoftSerial, Metro para el funcionamiento del sistema.** 
+
+  
+**Se requieren las librerias WavTrigger, LiquidCrystal, AltSoftSerial, Metro para el funcionamiento del sistema. Las carpetas estan incluidas en este repositorio, deben ser movidas a la carpeta de libraries de ArduinoIDE** 
 
 Dentro del codigo se pueden modificar ciertos valores para adaptarlos a las necesidades del usuario. Estos son:
 
