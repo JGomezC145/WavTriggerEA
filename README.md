@@ -51,7 +51,7 @@ GND       <--->  GND
 
 La matriz de botones, se conecta de la siguiente forma:
 ```
-P <---> VCC 3.3V
+P <---> VCC 5V
 N <---> GND
 s <---> Pin A0
 ```
