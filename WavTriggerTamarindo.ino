@@ -30,6 +30,52 @@ int gRateOffset = 0;  // WAV Trigger sample-rate offset
 int gNumTracks;
 int currentTrack = 0;
 String currentDig = "";
+bool playing = false;
+bool started = false;
+
+byte load[] = {
+  B00000,
+  B10111,
+  B10101,
+  B10111,
+  B11000,
+  B00011,
+  B01010,
+  B10011
+};
+
+byte pausa[] = {
+  B00000,
+  B11011,
+  B11011,
+  B11011,
+  B11011,
+  B11011,
+  B11011,
+  B00000
+};
+
+byte play[] = {
+  B10000,
+  B11000,
+  B11100,
+  B11110,
+  B11110,
+  B11100,
+  B11000,
+  B10000
+};
+
+byte stop[] = {
+  B00000,
+  B00000,
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B00000,
+  B00000
+};
 
 
 /* 
@@ -46,14 +92,22 @@ String lastbanco = "0";
 void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2);
+  lcd.createChar(0, load);
+  lcd.createChar(1, pausa);
+  lcd.createChar(2, play);
+  lcd.createChar(3, stop);
   lcd.setCursor(1, 0);
   lcd.print("Wav");
   lcd.setCursor(3, 1);
   lcd.print("Trigger EA");
+  lcd.setCursor(15,0);
+  lcd.write(byte(0));
   lcd.setBacklight(LIGHT);
-  delay(3000);
+  delay(2000);
   lcd.clear();
   lcd.print("Starting");
+  lcd.setCursor(15,0);
+  lcd.write(byte(0));
   pinMode(LED, OUTPUT);
   digitalWrite(LED, gLedState);
 
@@ -61,33 +115,54 @@ void setup() {
 
   wav.start();
   delay(100);
+  wav.update();
 
   wav.stopAllTracks();
   wav.samplerateOffset(0);
 
   wav.setReporting(true);
-
+  wav.update();
 
 
   delay(100);
+  wav.update();
   if (wav.getVersion(gWTrigVersion, VERSION_STRING_LEN)) {
     gLedState = 1;
     digitalWrite(LED, gLedState);
+    wav.update();
+    gNumTracks = wav.getNumTracks();
     Serial.println("version obtenida");
+    lcd.setCursor(0,0);
+    lcd.print("Pistas en la SD:");
+    lcd.setCursor(0,1);
+    wav.update();
+    lcd.print(gNumTracks);
+    lcd.setCursor(4, 1);
+    lcd.print("Bancos: " + String(gNumTracks/8));
+    lcd.setCursor(15,1);
+    lcd.write(byte(0));
+    delay(1500);
   } else {
     digitalWrite(LED, !gLedState);
     Serial.println("version no obtenida");
+    lcd.clear();
+    lcd.setCursor(0,1);
+    lcd.print("Error 15");
+    delay(3000);
   }
   delay(1000);
   // Set loop tracks
-
-
   Serial.print("Numero de canciones: ");
-  Serial.println(wav.getNumTracks());
+  gNumTracks = wav.getNumTracks();
+  Serial.println(gNumTracks);
+
+  lcd.clear();
   // get number of songs
   // print songs in lcd
   lcd.clear();
   lcd.print("Listo");
+  lcd.setCursor(15,0);
+  lcd.write(byte(0));
   delay(750);
   lcd.clear();
   lcd.print("Banco: " + String(banco));
@@ -98,7 +173,7 @@ void loop() {
 
   if (buttons) {
     if (buttons & BUTTON_UP) {
-      if (banco.toInt() < 2) {
+      if (banco.toInt() < (gNumTracks/8)) {
         banco = String(banco.toInt() + 1);
       }
       lcd.clear();
@@ -114,19 +189,51 @@ void loop() {
       delay(750);
     }
     if (buttons & BUTTON_SELECT) {
-      wav.stopAllTracks();
+      detenertodo();
     }
     if (buttons & BUTTON_LEFT) {
-      wav.trackPause(sonido);
+      if (started) {
+        if (playing) {
+        wav.trackPause(sonido);
+        lcd.setCursor(15,0);
+        lcd.write(byte(1));
+        lcd.setCursor(0, 1);
+        lcd.print("Pausa ");
+        playing = false;
+      }
+      }
     }
     if (buttons & BUTTON_RIGHT) {
-      wav.trackResume(sonido);
+      if (started) {
+        if (!playing) {
+        wav.trackResume(sonido);
+        lcd.setCursor(15,0);
+        lcd.write(byte(2));
+        lcd.setCursor(0, 1);
+        lcd.print("Reprod");
+        playing = true;
+      }
+      }
     }
 
   }
 
 
+  if (Serial.available()) {
+    String input = Serial.readString();
+    input.trim();
 
+    if (input == "lista") {
+      wav.update();
+      Serial.print("Numero de canciones: ");
+      Serial.println(wav.getNumTracks());
+    } else if (input == "version") {
+      wav.update();
+      wav.getVersion(gWTrigVersion, VERSION_STRING_LEN);
+      Serial.print("Version: ");
+      Serial.println(gWTrigVersion);
+    }
+  }
 
 
   lcd.setBacklight(LIGHT);
@@ -147,7 +254,7 @@ void loop() {
   
   if (boton && boton != 9) {
     sonido = banco.toInt() * 8 + boton;
-    if (sonido == 1) {
+    /* if (sonido == 1) {
       wav.trackLoop(1, 1);
     }
     if (sonido == 15) {
@@ -155,27 +262,35 @@ void loop() {
     }
     if (sonido == 16) {
       wav.trackLoop(16, 1);
-    }
+    } */
 
-    if (sonido == 17) {
+    /* if (sonido == 17) {
       wav.trackPlayPoly(17);
     } else {
       wav.trackPlaySolo(sonido);
+    } */
+    if (!started) { started = true;}
+    if (sonido > gNumTracks) {
+      lcd.setCursor(0, 1);
+      lcd.print("Sup limite");
+      lcd.setCursor(15,0);
+      lcd.write(byte(1));
+    } else {
+      wav.trackPlaySolo(sonido);
+      playing = true;
+      lcd.setCursor(0, 1);
+      lcd.print("            ");
+      lcd.setCursor(0, 1);
+      lcd.print("Reprod: " + String(sonido));
+      lcd.setCursor(15,0);
+      lcd.write(byte(2));
     }
-    delay(500);
-    lcd.setCursor(0, 1);
-    lcd.print("            ");
-    lcd.setCursor(0, 1);
-    lcd.print("Reprod: " + String(sonido));
+    
+    
     //return;
   }
   if (boton == 9) {
-    wav.stopAllTracks();
-    //wav.trackFade(sonido, -40, 3000, true);
-    lcd.setCursor(0, 1);
-    lcd.print("            ");
-    lcd.setCursor(0, 1);
-    lcd.print("Detenido");
+    detenertodo();
   }
 
   if (boton != NULL) {
@@ -183,10 +298,26 @@ void loop() {
   }
 }
 
+void detenertodo() {
+  if (started) {
+    if (playing) {
+      wav.stopAllTracks();
+      //wav.trackFade(sonido, -40, 3000, true);
+      lcd.setCursor(0, 1);
+      lcd.print("            ");
+      lcd.setCursor(0, 1);
+      lcd.print("Detenido");
+      lcd.setCursor(15,0);
+      lcd.write(byte(3));
+      playing = false;
+    }
+  }
+}
+
 /**
  * @brief Imprime mensaje en la primera linea del LCD
  * 
- * @param msg Mensaje a imprimir
+ * @param `msg` Mensaje a imprimir
  */
 void lclewr(String msg) {
   if (!updS) {
