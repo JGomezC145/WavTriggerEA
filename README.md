@@ -5,6 +5,7 @@
 - [Hardware](#hardware)
 - [Software](#software)
 - [WavTrigger](#wavtrigger)
+- [Errores](#errores)
 - [Renamer.py](#renamerpy)
     - [Atajos de teclado](#atajos-de-teclado)
 
@@ -34,6 +35,8 @@ RIGHT: Continua la reproducción del audio actual
 SELECT: Detener todos los audios
 ```
 
+
+
 ## Hardware
 - Arduino UNO
 - WavTrigger
@@ -51,7 +54,7 @@ GND       <--->  GND
 
 La matriz de botones, se conecta de la siguiente forma:
 ```
-P <---> VCC 5V
+P <---> VCC 3.3V
 N <---> GND
 s <---> Pin A0
 ```
@@ -61,9 +64,7 @@ Importante: Tanto el WavTrigger como el arduino deben tener alimentacion externa
 ## Software
 - Arduino IDE
 - Python 3.7
-
-  
-**Se requieren las librerias WavTrigger, LiquidCrystal, AltSoftSerial, Metro para el funcionamiento del sistema. Las carpetas estan incluidas en este repositorio, deben ser movidas a la carpeta de libraries de ArduinoIDE** 
+**Se requieren las librerias WavTrigger, LiquidCrystal, AltSoftSerial, Metro para el funcionamiento del sistema.** 
 
 Dentro del codigo se pueden modificar ciertos valores para adaptarlos a las necesidades del usuario. Estos son:
 
@@ -96,6 +97,19 @@ Dentro del codigo se pueden modificar ciertos valores para adaptarlos a las nece
 En cualquier cambio en el codigo del arduino el WavTrigger debe ser reiniciado para que los cambios se apliquen, si no, los cambios en el codigo anterior seguirán funcionando.
 
 Los triggers en el WaveTrigger se asignan de la siguiente forma: se asignan a las pistas en ese orden, y el boton reproduce la pista 1, se usa para debug. El switch debe estar en modo RUN para que funcione el sistema, si no, no se reproducirá nada y posiblemente el WavTrigger se apague.
+
+## Errores
+Se pueden mostrar errores en la pantalla lcd. Aparece usualmente como `Error ##` siendo ## el codigo de error.
+La lista de errores es 
+
+```
+
+Error 15: No se pudo obtener la información de la version.
+Posible causa: 
+    - La comunicación RX/TX no esta bien conectada.
+    - El GND en común y el WavTrigger no está bien conectado.
+Solución: Revisar los cables.
+```
 
 ## Renamer.py
 Este script permite renombrar los archivos de forma automática, según el orden en que se añada la pista. 
